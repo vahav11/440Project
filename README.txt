@@ -1,8 +1,8 @@
 COMP 440 - Phase 1
 
 TEAM
-Astghik Ghazaryan - 204559023
-Vahe Tovmasian - 203881775
+Astghik Ghazaryan -
+Vahe Tovmasian - 
 [Teammate name] - [ID]
 
 VIDEO
