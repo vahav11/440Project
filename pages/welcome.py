@@ -24,20 +24,22 @@ class WelcomePage(QWidget):
 
         self.post_item_button = QPushButton("Post a New Item")
         self.my_items_button = QPushButton("My Items")
-        self.search_button = QPushButton("Search Items by Category")
-        self.review_button = QPushButton("Write a Review")
-        self.queries_button = QPushButton("Reports")
+        self.browse_button = QPushButton("Browse Items")
 
         layout.addWidget(self.post_item_button)
         layout.addWidget(self.my_items_button)
-        layout.addWidget(self.search_button)
-        layout.addWidget(self.review_button)
-        layout.addWidget(self.queries_button)
+        layout.addWidget(self.browse_button)
 
         layout.addSpacing(20)
 
         self.logout_button = QPushButton("Log Out")
         layout.addWidget(self.logout_button)
+
+        layout.addSpacing(25)
+
+        self.queries_button = QPushButton("Store Reports")
+        self.queries_button.setStyleSheet("color: gray;")
+        layout.addWidget(self.queries_button)
 
         layout.addStretch()
 

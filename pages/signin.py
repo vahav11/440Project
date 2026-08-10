@@ -106,4 +106,4 @@ class SigninPage(KeyNavMixin, QWidget):
         self.password.clear()
         self.message.setText("")
 
-        return (firstName, lastName)
+        return (row[0], firstName, lastName)
