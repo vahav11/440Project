@@ -3,7 +3,7 @@ CREATE DATABASE IF NOT EXISTS comp440;
 USE comp440;
 
 CREATE TABLE IF NOT EXISTS user (
-  username   VARCHAR(50)  PRIMARY KEY,
+  username   VARCHAR(50)  NOT NULL,
   password   VARCHAR(255) NOT NULL,
   firstName  VARCHAR(50)  NOT NULL,
   lastName   VARCHAR(50)  NOT NULL,
@@ -15,31 +15,101 @@ CREATE TABLE IF NOT EXISTS user (
 );
 
 CREATE TABLE IF NOT EXISTS item (
-  Item_ID INT PRIMARY KEY,
-  Title VARCHAR(50) NOT NULL,
-  Descript VARCHAR(255),
-  Price INT NOT NULL,
-  Date_Posted DATE NOT NULL,
-  Seller VARCHAR(50) NOT NULL,
-  Clothing BOOLEAN NOT NULL, -- For the Categories I am making a few generic ones and making them bools
-  Electronic BOOLEAN NOT NULL,
-  Toy BOOLEAN NOT NULL,
-  Kitchen BOOLEAN NOT NULL,
-  Available_in_store BOOLEAN NOT NULL,
-  FOREIGN KEY (Seller) 
-  REFERENCES user(username)
+  itemID       INT           NOT NULL AUTO_INCREMENT,
+  title        VARCHAR(100)  NOT NULL,
+  description  TEXT,
+  price        DECIMAL(10,2) NOT NULL,
+  datePosted   DATE          NOT NULL,
+  seller       VARCHAR(50)   NOT NULL,
+  PRIMARY KEY (itemID),
+  FOREIGN KEY (seller) REFERENCES user(username),
+  CHECK (price >= 0)
 );
 
-/*
-SELECT DATABASE();
-USE comp440;
-Uncomment out whichever ones of these you want to test 
--- Code to show the tables SHOW TABLES;
--- Code to see the item table and stuff in it  SELECT * FROM item;
--- Code to see the user table and stuff in it  SELECT * FROM user;
-*/
+CREATE TABLE IF NOT EXISTS item_category (
+  itemID    INT         NOT NULL,
+  category  VARCHAR(50) NOT NULL,
+  PRIMARY KEY (itemID, category),
+  FOREIGN KEY (itemID) REFERENCES item(itemID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS review (
+  reviewID    INT          NOT NULL AUTO_INCREMENT,
+  itemID      INT          NOT NULL,
+  reviewer    VARCHAR(50)  NOT NULL,
+  rating      ENUM('Excellent','Good','Fair','Poor') NOT NULL,
+  comment     VARCHAR(255),
+  reviewDate  DATE         NOT NULL,
+  PRIMARY KEY (reviewID),
+  UNIQUE (itemID, reviewer),
+  FOREIGN KEY (itemID)   REFERENCES item(itemID) ON DELETE CASCADE,
+  FOREIGN KEY (reviewer) REFERENCES user(username)
+);
 
 
+DROP TRIGGER IF EXISTS limit_items_per_day;
+
+DELIMITER $$
+
+CREATE TRIGGER limit_items_per_day
+BEFORE INSERT ON item
+FOR EACH ROW
+BEGIN
+  IF (SELECT COUNT(*) FROM item
+      WHERE seller = NEW.seller AND datePosted = NEW.datePosted) >= 2 THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'You may post at most 2 items per day.';
+  END IF;
+END$$
+
+DELIMITER ;
 
 
-)
+DROP TRIGGER IF EXISTS limit_reviews_per_day;
+
+DELIMITER $$
+
+CREATE TRIGGER limit_reviews_per_day
+BEFORE INSERT ON review
+FOR EACH ROW
+BEGIN
+  IF (SELECT COUNT(*) FROM review
+      WHERE reviewer = NEW.reviewer AND reviewDate = NEW.reviewDate) >= 3 THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'You may submit at most 3 reviews per day.';
+  END IF;
+END$$
+
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS no_self_review;
+
+DELIMITER $$
+
+CREATE TRIGGER no_self_review
+BEFORE INSERT ON review
+FOR EACH ROW
+BEGIN
+  IF (SELECT seller FROM item WHERE itemID = NEW.itemID) = NEW.reviewer THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'You cannot review your own item.';
+  END IF;
+END$$
+
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS no_review_edits;
+
+DELIMITER $$
+
+CREATE TRIGGER no_review_edits
+BEFORE UPDATE ON review
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Reviews cannot be modified after submission.';
+END$$
+
+DELIMITER ;
