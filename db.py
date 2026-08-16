@@ -3,19 +3,22 @@ import mysql.connector
 import config
 
 
-# Remembers the password after the first time, so you are only asked
-# once per run instead of on every database action.
+# remember it so we only ask once per run
 _password = None
 
 
 def get_password():
     global _password
 
-    if _password is None:
+    # not None, because an empty answer would get cached and then every
+    # connection fails with access denied
+    if not _password:
         if config.DB_PASSWORD:
             _password = config.DB_PASSWORD
         else:
-            _password = getpass.getpass("Enter your MySQL password: ")
+            print("(typing is hidden, just type it and press enter)")
+            while not _password:
+                _password = getpass.getpass("MySQL password: ").strip()
 
     return _password
 

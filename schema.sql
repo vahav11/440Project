@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS user (
   UNIQUE (phone)
 );
 
+-- one row per item for sale
 CREATE TABLE IF NOT EXISTS item (
   itemID       INT           NOT NULL AUTO_INCREMENT,
   title        VARCHAR(100)  NOT NULL,
@@ -26,9 +27,12 @@ CREATE TABLE IF NOT EXISTS item (
   CHECK (price >= 0)
 );
 
+-- one row per category ON an item, so 3 categories = 3 rows.
+-- cant put a list in a column so it needs its own table.
 CREATE TABLE IF NOT EXISTS item_category (
   itemID    INT         NOT NULL,
   category  VARCHAR(50) NOT NULL,
+  -- both columns together, so an item can repeat but not the pair
   PRIMARY KEY (itemID, category),
   FOREIGN KEY (itemID) REFERENCES item(itemID) ON DELETE CASCADE
 );
@@ -41,11 +45,17 @@ CREATE TABLE IF NOT EXISTS review (
   comment     VARCHAR(255),
   reviewDate  DATE         NOT NULL,
   PRIMARY KEY (reviewID),
+  -- one review per person per item
   UNIQUE (itemID, reviewer),
   FOREIGN KEY (itemID)   REFERENCES item(itemID) ON DELETE CASCADE,
   FOREIGN KEY (reviewer) REFERENCES user(username)
 );
 
+
+-- the rules below cant be done with a constraint because they need to
+-- count other rows or look at another table, so they are triggers.
+-- DELIMITER is only there because workbench splits the file on ; and
+-- the trigger has semicolons inside it.
 
 DROP TRIGGER IF EXISTS limit_items_per_day;
 
@@ -91,6 +101,7 @@ CREATE TRIGGER no_self_review
 BEFORE INSERT ON review
 FOR EACH ROW
 BEGIN
+  -- has to look in item to find out who owns it
   IF (SELECT seller FROM item WHERE itemID = NEW.itemID) = NEW.reviewer THEN
     SIGNAL SQLSTATE '45000'
       SET MESSAGE_TEXT = 'You cannot review your own item.';
@@ -104,6 +115,7 @@ DROP TRIGGER IF EXISTS no_review_edits;
 
 DELIMITER $$
 
+-- no IF on this one, editing a review is never allowed
 CREATE TRIGGER no_review_edits
 BEFORE UPDATE ON review
 FOR EACH ROW

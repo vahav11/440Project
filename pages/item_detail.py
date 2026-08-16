@@ -90,7 +90,6 @@ class ItemDetailPage(QWidget):
 
         self.setLayout(layout)
 
-    # ------------------------------------------------------------------
     def show_error(self, text):
         self.message.setStyleSheet("color: red;")
         self.message.setText(text)
@@ -99,9 +98,6 @@ class ItemDetailPage(QWidget):
         self.message.setStyleSheet("color: green;")
         self.message.setText(text)
 
-    # ------------------------------------------------------------------
-    # Load one item and everything about it
-    # ------------------------------------------------------------------
     def load_item(self, itemID):
         self.itemID = itemID
         self.message.setText("")
@@ -134,6 +130,7 @@ class ItemDetailPage(QWidget):
             )
             categories = [r[0] for r in cursor.fetchall()]
 
+            # counts per rating, only comes back for ratings that were used
             cursor.execute(
                 "SELECT rating, COUNT(*) FROM review WHERE itemID = %s "
                 "GROUP BY rating",
@@ -152,12 +149,12 @@ class ItemDetailPage(QWidget):
             conn.close()
 
         except mysql.connector.Error as err:
-            self.show_error(f"Could not load this item. {err}")
+            self.show_error(f"Could not load this item. {err.msg}")
             return
 
-        self.title_label.setText(f"{item_title}   —   ${price}")
+        self.title_label.setText(f"{item_title}    ${price}")
         self.details_label.setText(
-            f"Item #{itemID}   ·   posted by {seller}   ·   {datePosted}"
+            f"Item #{itemID}    posted by {seller}    {datePosted}"
         )
         self.description_label.setText(description or "")
 
@@ -166,6 +163,7 @@ class ItemDetailPage(QWidget):
         else:
             self.categories_label.setText("Categories: none")
 
+        # fill in the missing ratings with 0 so all four always show
         lines = []
         total = 0
         for name in RATINGS:
@@ -179,7 +177,6 @@ class ItemDetailPage(QWidget):
         self.fill_reviews(reviews)
         self.update_form_visibility()
 
-    # ------------------------------------------------------------------
     def fill_reviews(self, reviews):
         while self.reviews_area.count() > 1:
             old = self.reviews_area.takeAt(0)
@@ -201,7 +198,7 @@ class ItemDetailPage(QWidget):
             )
             box = QVBoxLayout()
 
-            head = QLabel(f"{rating}   ·   {reviewer}   ·   {reviewDate}")
+            head = QLabel(f"{rating}    {reviewer}    {reviewDate}")
             head.setStyleSheet("font-weight: bold; border: none;")
             box.addWidget(head)
 
@@ -214,9 +211,8 @@ class ItemDetailPage(QWidget):
             card.setLayout(box)
             self.reviews_area.insertWidget(self.reviews_area.count() - 1, card)
 
-    # ------------------------------------------------------------------
-    # Hide the form when the user should not be able to review this item
-    # ------------------------------------------------------------------
+    # the trigger blocks this anyway, hiding the form is just so they
+    # dont bother trying
     def update_form_visibility(self):
         if session.current_user is None:
             self.form.hide()
@@ -229,7 +225,6 @@ class ItemDetailPage(QWidget):
 
         self.form.show()
 
-    # ------------------------------------------------------------------
     def submit_review(self):
         comment = self.comment.text().strip()
         rating = self.rating.currentText()
@@ -251,6 +246,7 @@ class ItemDetailPage(QWidget):
             conn.close()
 
         except mysql.connector.Error as err:
+            # 1062 is the duplicate key error, ie UNIQUE (itemID, reviewer)
             if err.errno == 1062:
                 self.show_error("You have already reviewed this item.")
             else:

@@ -1,4 +1,2 @@
-# Holds who is currently logged in, so any page can ask.
-# Set when someone signs in, cleared when they log out.
-
+# whoever is logged in right now. set on sign in, cleared on log out.
 current_user = None

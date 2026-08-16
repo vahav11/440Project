@@ -6,12 +6,15 @@ from pages.welcome import WelcomePage
 from pages.browse import BrowsePage
 from pages.item_detail import ItemDetailPage
 from pages.item_manager import ItemManagerPage
+from pages.post_item import PostItemPage
+from pages.my_items import MyItemsPage
+from pages.reports import ReportsPage
 import sys
 import db
 import session
 
-# Ask for the MySQL password before the window opens, so the terminal
-# is not waiting for input while the app is already on screen.
+# ask before the window opens, otherwise the terminal is waiting
+# behind an app thats already on screen
 db.get_password()
 
 app = QApplication(sys.argv)
@@ -27,6 +30,9 @@ welcome = WelcomePage()
 browse = BrowsePage()
 item_detail = ItemDetailPage()
 item_manager = ItemManagerPage()
+post_item = PostItemPage()
+my_items = MyItemsPage()
+reports = ReportsPage()
 
 stack.addWidget(home)        # 0
 stack.addWidget(signup)      # 1
@@ -35,6 +41,9 @@ stack.addWidget(welcome)     # 3
 stack.addWidget(browse)      # 4
 stack.addWidget(item_detail) # 5
 stack.addWidget(item_manager)# 6
+stack.addWidget(post_item)   # 7
+stack.addWidget(my_items)    # 8
+stack.addWidget(reports)     # 9
 
 
 def do_signup():
@@ -99,9 +108,27 @@ browse.back_button.clicked.connect(lambda: stack.setCurrentIndex(3))
 item_detail.back_button.clicked.connect(open_browse)
 
 # Wire the Item Manager / Queries logic based on welcome.py buttons
-welcome.post_item_button.clicked.connect(open_item_manager_manage)
-welcome.my_items_button.clicked.connect(open_item_manager_manage)
-welcome.queries_button.clicked.connect(open_item_manager_queries)
+def open_post_item():
+    post_item.message.setText("")
+    stack.setCurrentIndex(7)
+
+
+welcome.post_item_button.clicked.connect(open_post_item)
+post_item.back_button.clicked.connect(lambda: stack.setCurrentIndex(3))
+def open_my_items():
+    my_items.load_items()
+    stack.setCurrentIndex(8)
+
+
+welcome.my_items_button.clicked.connect(open_my_items)
+my_items.back_button.clicked.connect(lambda: stack.setCurrentIndex(3))
+def open_reports():
+    reports.load_choices()
+    stack.setCurrentIndex(9)
+
+
+welcome.queries_button.clicked.connect(open_reports)
+reports.back_button.clicked.connect(lambda: stack.setCurrentIndex(3))
 
 # Wire the back button from item_manager to return to the Welcome tab
 item_manager.back_button.clicked.connect(lambda: stack.setCurrentIndex(3))

@@ -9,7 +9,7 @@ class BrowsePage(QWidget):
     def __init__(self):
         super().__init__()
 
-        # main.py sets this to a function that opens the item detail page
+        # main.py fills this in
         self.on_open_item = None
 
         layout = QVBoxLayout()
@@ -54,9 +54,7 @@ class BrowsePage(QWidget):
 
         self.setLayout(layout)
 
-    # ------------------------------------------------------------------
-    # Load the list of categories that actually exist in the database
-    # ------------------------------------------------------------------
+    # whatever categories are actually in the table
     def load_categories(self):
         self.message.setText("")
         self.category_list.clear()
@@ -79,9 +77,6 @@ class BrowsePage(QWidget):
 
         self.category_list.setCurrentRow(0)
 
-    # ------------------------------------------------------------------
-    # Load the items for whichever category is selected
-    # ------------------------------------------------------------------
     def load_items(self, category):
         self.clear_cards()
 
@@ -93,6 +88,7 @@ class BrowsePage(QWidget):
                    "FROM item ORDER BY datePosted DESC, itemID DESC")
             params = ()
         else:
+            # need the join, category is in the other table
             sql = ("SELECT i.itemID, i.title, i.description, i.price, "
                    "       i.seller, i.datePosted "
                    "FROM item i "
@@ -123,9 +119,6 @@ class BrowsePage(QWidget):
             card = self.make_card(row)
             self.cards_area.insertWidget(self.cards_area.count() - 1, card)
 
-    # ------------------------------------------------------------------
-    # Build one card for one item
-    # ------------------------------------------------------------------
     def make_card(self, row):
         itemID, item_title, description, price, seller, datePosted = row
 
@@ -137,11 +130,11 @@ class BrowsePage(QWidget):
 
         box = QVBoxLayout()
 
-        heading = QLabel(f"{item_title}   —   ${price}")
+        heading = QLabel(f"{item_title}    ${price}")
         heading.setStyleSheet("font-weight: bold; border: none;")
         box.addWidget(heading)
 
-        details = QLabel(f"Item #{itemID}   ·   posted by {seller}   ·   {datePosted}")
+        details = QLabel(f"Item #{itemID}    posted by {seller}    {datePosted}")
         details.setStyleSheet("color: gray; border: none;")
         box.addWidget(details)
 
@@ -161,7 +154,6 @@ class BrowsePage(QWidget):
         card.setLayout(box)
         return card
 
-    # ------------------------------------------------------------------
     def clear_cards(self):
         while self.cards_area.count() > 1:
             item = self.cards_area.takeAt(0)
